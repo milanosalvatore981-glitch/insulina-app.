@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="App per calcolo dosaggio penna insulina">
+    <title>Insulina - Calcolo Penna</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .screen {
+            display: none;
+            height: 100vh;
+            width: 100vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Intro Screen */
+        .intro-outer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .background-images {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        .bg-image {
+            flex: 1;
+            opacity: 0.3;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .bg-glucometer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .bg-stethoscope {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .bg-doctor {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .intro-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 85%;
+            max-width: 400px;
+        }
+
+        .intro-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .status-indicator.active {
+            background: #4CAF50;
+        }
+
+        .status-indicator.inactive {
+            background: transparent;
+            border: 2px solid #ccc;
+        }
+
+        .meal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-breakfast {
+            background: #2196F3;
+        }
+
+        .btn-lunch {
+            background: #4CAF50;
+        }
+
+        .btn-dinner {
+            background: #f44336;
+        }
+
+        .btn-exit {
+            background: #9e9e9e;
+        }
+
+        .btn-back {
+            background: #607D8B;
+        }
+
+        .btn-save {
+            background: #FF9800;
+        }
+
+        .btn-default {
+            background: #9C27B0;
+        }
+
+        .settings-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #607D8B;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+
+        .settings-btn:active {
+            transform: scale(0.9);
+        }
+
+        .gear-icon {
+            font-size: 30px;
+            color: white;
+        }
+
+        /* Meal Screens */
+        .meal-outer {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .meal-outer.breakfast {
+            background: #2196F3;
+        }
+
+        .meal-outer.lunch {
+            background: #4CAF50;
+        }
+
+        .meal-outer.dinner {
+            background: #f44336;
+        }
+
+        .meal-inner {
+            background: #e0e0e0;
+            padding: 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .meal-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 18px;
+            background: white;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        .result-field {
+            background: #f5f5f5;
+            position: relative;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .result-field:empty::before {
+            content: 'Risultato';
+            color: #999;
+            font-weight: normal;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .button-group .btn {
+            flex: 1;
+        }
+
+        /* Settings Screen */
+        .settings-outer {
+            width: 100%;
+            height: 100%;
+            background: #9e9e9e;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .settings-inner {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .settings-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-align: center;
+            color: white;
+        }
+
+        .settings-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .settings-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .settings-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .settings-input:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        .settings-input:disabled {
+            background: #f5f5f5;
+            color: #999;
+        }
+
+        .settings-label {
+            font-size: 14px;
+            color: #666;
+            min-width: 80px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .icon {
+            font-size: 20px;
+        }
+
+        .invalid-result {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <!-- Intro Screen -->
+    <div id="intro" class="screen active">
+        <div class="intro-outer">
+            <div class="background-images">
+                <div class="bg-image bg-glucometer"></div>
+                <div class="bg-image bg-stethoscope"></div>
+                <div class="bg-image bg-doctor"></div>
+            </div>
+            <div class="intro-inner">
+                <h1 class="intro-title">
+                    Calcolo Penna Insulina
+                    <span class="status-indicator" id="statusIndicator"></span>
+                </h1>
+                <div class="meal-buttons">
+                    <button class="btn btn-breakfast" onclick="showScreen('breakfast')">
+                        Colazione
+                    </button>
+                    <button class="btn btn-lunch" onclick="showScreen('lunch')">
+                        Pranzo
+                    </button>
+                    <button class="btn btn-dinner" onclick="showScreen('dinner')">
+                        Cena
+                    </button>
+                    <button class="btn btn-exit" onclick="exitApp()">
+                        <span class="icon">✕</span> Esci
+                    </button>
+                </div>
+                <button class="settings-btn" onclick="showScreen('settings')">
+                    <span class="gear-icon">⚙</span>
+                    <span class="status-indicator" id="settingsStatusIndicator" style="position: absolute; top: 8px; right: 8px; width: 10px; height: 10px;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breakfast Screen -->
+    <div id="breakfast" class="screen">
+        <div class="meal-outer breakfast">
+            <div class="meal-inner">
+                <h2 class="meal-title">
+                    Colazione
+                    <span class="status-indicator" id="breakfastStatusIndicator"></span>
+                </h2>
+                <div class="input-group">
+                    <label class="input-label">Valore Glicemico</label>
+                    <input type="number" inputmode="numeric" class="input-field" id="breakfastInput" oninput="calculateInsulin('breakfast')">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Penna Colazione</label>
+                    <div class="input-field result-field" id="breakfastResult"></div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-back" onclick="showScreen('intro')">
+                        <span class="icon">←</span> Indietro
+                    </button>
+                    <button class="btn btn-exit" onclick="exitApp()">
+                        <span class="icon">✕</span> Esci
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lunch Screen -->
+    <div id="lunch" class="screen">
+        <div class="meal-outer lunch">
+            <div class="meal-inner">
+                <h2 class="meal-title">
+                    Pranzo
+                    <span class="status-indicator" id="lunchStatusIndicator"></span>
+                </h2>
+                <div class="input-group">
+                    <label class="input-label">Valore Glicemico</label>
+                    <input type="number" inputmode="numeric" class="input-field" id="lunchInput" oninput="calculateInsulin('lunch')">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Penna Pranzo</label>
+                    <div class="input-field result-field" id="lunchResult"></div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-back" onclick="showScreen('intro')">
+                        <span class="icon">←</span> Indietro
+                    </button>
+                    <button class="btn btn-exit" onclick="exitApp()">
+                        <span class="icon">✕</span> Esci
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dinner Screen -->
+    <div id="dinner" class="screen">
+        <div class="meal-outer dinner">
+            <div class="meal-inner">
+                <h2 class="meal-title">
+                    Cena
+                    <span class="status-indicator" id="dinnerStatusIndicator"></span>
+                </h2>
+                <div class="input-group">
+                    <label class="input-label">Valore Glicemico</label>
+                    <input type="number" inputmode="numeric" class="input-field" id="dinnerInput" oninput="calculateInsulin('dinner')">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Penna Cena</label>
+                    <div class="input-field result-field" id="dinnerResult"></div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-back" onclick="showScreen('intro')">
+                        <span class="icon">←</span> Indietro
+                    </button>
+                    <button class="btn btn-exit" onclick="exitApp()">
+                        <span class="icon">✕</span> Esci
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings" class="screen">
+        <div class="settings-outer">
+            <div class="settings-inner">
+                <h2 class="settings-title">Impostazioni</h2>
+                
+                <div class="settings-section">
+                    <div class="section-title">Valori Base</div>
+                    <div class="settings-row">
+                        <span class="settings-label">Colazione:</span>
+                        <input type="number" inputmode="numeric" class="settings-input" id="baseBreakfast" value="6">
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Pranzo:</span>
+                        <input type="number" inputmode="numeric" class="settings-input" id="baseLunch" value="8">
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Cena:</span>
+                        <input type="number" inputmode="numeric" class="settings-input" id="baseDinner" value="8">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <div class="section-title">Tabella Range Glicemici</div>
+                    <div class="settings-row">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range1min" value="0" placeholder="Min">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range1max" value="100" placeholder="Max">
+                        <input type="text" class="settings-input" id="ref1" value="-4" placeholder="Rif">
+                    </div>
+                    <div class="settings-row">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range2min" value="101">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range2max" value="149">
+                        <input type="text" class="settings-input" id="ref2" value="-2">
+                    </div>
+                    <div class="settings-row">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range3min" value="150">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range3max" value="200">
+                        <input type="text" class="settings-input" id="ref3" value="0">
+                    </div>
+                    <div class="settings-row">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range4min" value="201">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range4max" value="230">
+                        <input type="text" class="settings-input" id="ref4" value="+1">
+                    </div>
+                    <div class="settings-row">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range5min" value="231">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range5max" value="300">
+                        <input type="text" class="settings-input" id="ref5" value="+2">
+                    </div>
+                    <div class="settings-row">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range6min" value="301">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range6max" value="350">
+                        <input type="text" class="settings-input" id="ref6" value="+4">
+                    </div>
+                    <div class="settings-row">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range7min" value="351">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range7max" value="2000">
+                        <input type="text" class="settings-input" id="ref7" value="+6">
+                    </div>
+                    <div class="settings-row">
+                        <input type="number" inputmode="numeric" class="settings-input" id="range8min" value="2001">
+                        <span class="settings-label">e oltre</span>
+                        <input type="text" class="settings-input" id="ref8" value="****" disabled>
+                    </div>
+                </div>
+
+                <div class="button-grid">
+                    <button class="btn btn-back" onclick="showScreen('intro')">
+                        <span class="icon">←</span> Indietro
+                    </button>
+                    <button class="btn btn-exit" onclick="exitApp()">
+                        <span class="icon">✕</span> Esci
+                    </button>
+                    <button class="btn btn-save" onclick="saveSettings()">
+                        💾 Salva Dati
+                    </button>
+                    <button class="btn btn-default" onclick="loadDefaults()">
+                        🔄 Valori Default
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Default values stored permanently
+        const DEFAULT_VALUES = {
+            baseBreakfast: 6,
+            baseLunch: 8,
+            baseDinner: 8,
+            ranges: [
+                { min: 0, max: 100, ref: '-4' },
+                { min: 101, max: 149, ref: '-2' },
+                { min: 150, max: 200, ref: '0' },
+                { min: 201, max: 230, ref: '+1' },
+                { min: 231, max: 300, ref: '+2' },
+                { min: 301, max: 350, ref: '+4' },
+                { min: 351, max: 2000, ref: '+6' },
+                { min: 2001, max: 999999, ref: '****' }
+            ]
+        };
+
+        // Load settings from localStorage or use defaults
+        function loadSettings() {
+            const saved = localStorage.getItem('insulinSettings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                document.getElementById('baseBreakfast').value = settings.baseBreakfast;
+                document.getElementById('baseLunch').value = settings.baseLunch;
+                document.getElementById('baseDinner').value = settings.baseDinner;
+                
+                settings.ranges.forEach((range, i) => {
+                    document.getElementById(`range${i+1}min`).value = range.min;
+                    document.getElementById(`range${i+1}max`).value = range.max;
+                    document.getElementById(`ref${i+1}`).value = range.ref;
+                });
+                updateStatusIndicators(false);
+            } else {
+                loadDefaults();
+            }
+        }
+
+        function saveSettings() {
+            const settings = {
+                baseBreakfast: parseInt(document.getElementById('baseBreakfast').value),
+                baseLunch: parseInt(document.getElementById('baseLunch').value),
+                baseDinner: parseInt(document.getElementById('baseDinner').value),
+                ranges: []
+            };
+
+            for (let i = 1; i <= 8; i++) {
+                settings.ranges.push({
+                    min: parseInt(document.getElementById(`range${i}min`).value),
+                    max: i < 8 ? parseInt(document.getElementById(`range${i}max`).value) : 999999,
+                    ref: document.getElementById(`ref${i}`).value
+                });
+            }
+
+            localStorage.setItem('insulinSettings', JSON.stringify(settings));
+            alert('Dati salvati con successo!');
+            updateStatusIndicators(false);
+        }
+
+        function loadDefaults() {
+            document.getElementById('baseBreakfast').value = DEFAULT_VALUES.baseBreakfast;
+            document.getElementById('baseLunch').value = DEFAULT_VALUES.baseLunch;
+            document.getElementById('baseDinner').value = DEFAULT_VALUES.baseDinner;
+
+            DEFAULT_VALUES.ranges.forEach((range, i) => {
+                document.getElementById(`range${i+1}min`).value = range.min;
+                if (i < 7) {
+                    document.getElementById(`range${i+1}max`).value = range.max;
+                }
+                document.getElementById(`ref${i+1}`).value = range.ref;
+            });
+
+            localStorage.setItem('insulinSettings', JSON.stringify(DEFAULT_VALUES));
+            updateStatusIndicators(true);
+        }
+
+        function updateStatusIndicators(isDefault) {
+            const indicators = [
+                'statusIndicator',
+                'settingsStatusIndicator',
+                'breakfastStatusIndicator',
+                'lunchStatusIndicator',
+                'dinnerStatusIndicator'
+            ];
+            
+            indicators.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.className = 'status-indicator ' + (isDefault ? 'active' : 'inactive');
+                }
+            });
+        }
+
+        function getCurrentSettings() {
+            const saved = localStorage.getItem('insulinSettings');
+            return saved ? JSON.parse(saved) : DEFAULT_VALUES;
+        }
+
+        function calculateInsulin(mealType) {
+            const settings = getCurrentSettings();
+            const inputId = mealType + 'Input';
+            const resultId = mealType + 'Result';
+            const value = parseFloat(document.getElementById(inputId).value);
+
+            if (isNaN(value) || value < 0) {
+                document.getElementById(resultId).textContent = '';
+                document.getElementById(resultId).classList.remove('invalid-result');
+                return;
+            }
+
+            let baseValue;
+            if (mealType === 'breakfast') baseValue = settings.baseBreakfast;
+            else if (mealType === 'lunch') baseValue = settings.baseLunch;
+            else baseValue = settings.baseDinner;
+
+            // Find matching range
+            let adjustment = null;
+            for (let range of settings.ranges) {
+                if (value >= range.min && value <= range.max) {
+                    adjustment = range.ref;
+                    break;
+                }
+            }
+
+            const resultEl = document.getElementById(resultId);
+            
+            if (adjustment === '****') {
+                resultEl.textContent = 'Non Valido';
+                resultEl.classList.add('invalid-result');
+            } else if (adjustment === '0') {
+                resultEl.textContent = baseValue;
+                resultEl.classList.remove('invalid-result');
+            } else {
+                const adjustValue = parseInt(adjustment);
+                const result = baseValue + adjustValue;
+                resultEl.textContent = result;
+                resultEl.classList.remove('invalid-result');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function exitApp() {
+            if (confirm('Sei sicuro di voler uscire?')) {
+                window.close();
+                // Fallback for PWA
+                if (!window.closed) {
+                    alert('Premi il tasto Home o Indietro del tuo dispositivo per uscire');
+                }
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            loadSettings();
+        });
+
+        // Check if settings match defaults
+        function checkIfDefault() {
+            const current = getCurrentSettings();
+            const isDefault = JSON.stringify(current) === JSON.stringify(DEFAULT_VALUES);
+            updateStatusIndicators(isDefault);
+        }
+
+        // Check on input change
+        document.addEventListener('input', (e) => {
+            if (e.target.classList.contains('settings-input')) {
+                setTimeout(checkIfDefault, 100);
+            }
+        });
+    </script>
+</body>
+</html>
